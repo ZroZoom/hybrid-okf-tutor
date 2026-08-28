@@ -107,6 +107,29 @@ describe("createTutorHandler", () => {
     });
   });
 
+  it("maps an overlong upstream concept ID to a generic 502 without leaking it", async () => {
+    const overlongConceptId = `upstream-private-${"x".repeat(84)}`;
+    searchConcepts.mockResolvedValueOnce([
+      {
+        id: overlongConceptId,
+        name: concept.name,
+        subject: "matematyka",
+        reviewStatus: "published"
+      }
+    ]);
+    getConcept.mockResolvedValueOnce({ ...concept, id: overlongConceptId });
+
+    const response = await handler()(
+      requestFor({ action: "start", message: "Chcę obliczyć pole trapezu" })
+    );
+    const serialized = JSON.stringify(await json(response));
+
+    expect(overlongConceptId).toHaveLength(101);
+    expect(response.status).toBe(502);
+    expect(serialized).toBe('{"error":"Tutor service is temporarily unavailable."}');
+    expect(serialized).not.toContain(overlongConceptId);
+  });
+
   it("answers by fetching only the session concept and applying its formula atom", async () => {
     const response = await handler()(
       requestFor({ action: "answer", message: "P=(a+b)*h/2", session })

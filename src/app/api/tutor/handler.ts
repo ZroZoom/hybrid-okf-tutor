@@ -114,12 +114,16 @@ export const createTutorHandler =
       const prefix = safety.mode === "supportive" ? safety.prefix : "";
 
       if (body.action === "start") {
-        const session: TutorSession = {
+        const parsedSession = sessionSchema.safeParse({
           taskId: "trapezoid-area-1",
           conceptId: concept.id,
           stage: "recall_formula",
           hintLevel: 0
-        };
+        });
+
+        if (!parsedSession.success) return failedUpstreamResponse();
+
+        const session: TutorSession = parsedSession.data;
 
         return jsonResponse({
           reply: `${prefix}Jaki jest wzór na ${concept.name.toLowerCase()}?`,
