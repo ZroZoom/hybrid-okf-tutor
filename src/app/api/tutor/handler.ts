@@ -148,6 +148,11 @@ export const createTutorHandler =
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();
 
+      console.info("Tutor formula diagnostic.", {
+        title: formulaAtom.title,
+        text: formulaAtom.text
+      });
+
       const prefix = safety.mode === "supportive" ? safety.prefix : "";
       const reviewStatus = leastReviewedStatus(concept.reviewStatus, formulaAtom.reviewStatus);
 
