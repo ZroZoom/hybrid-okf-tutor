@@ -31,11 +31,66 @@ export type WalkthroughInput = {
   answer: string;
 };
 
+const readLatexGroup = (
+  value: string,
+  openingBraceIndex: number
+): { content: string; nextIndex: number } | null => {
+  if (value[openingBraceIndex] !== "{") return null;
+
+  let depth = 0;
+  for (let index = openingBraceIndex; index < value.length; index += 1) {
+    if (value[index] === "{") depth += 1;
+    if (value[index] === "}") depth -= 1;
+
+    if (depth === 0) {
+      return {
+        content: value.slice(openingBraceIndex + 1, index),
+        nextIndex: index + 1
+      };
+    }
+  }
+
+  return null;
+};
+
+const linearizeLatexFractions = (value: string): string => {
+  let result = "";
+  let index = 0;
+
+  while (index < value.length) {
+    if (!value.startsWith("\\frac", index)) {
+      result += value[index];
+      index += 1;
+      continue;
+    }
+
+    const numerator = readLatexGroup(value, index + "\\frac".length);
+    const denominator = numerator ? readLatexGroup(value, numerator.nextIndex) : null;
+
+    if (!numerator || !denominator) {
+      result += value[index];
+      index += 1;
+      continue;
+    }
+
+    result += `(${linearizeLatexFractions(numerator.content)})/${linearizeLatexFractions(
+      denominator.content
+    )}`;
+    index = denominator.nextIndex;
+  }
+
+  return result;
+};
+
 const normalizeExpression = (value: string): string => {
   const equalsIndex = value.indexOf("=");
   const rightHandSide = equalsIndex === -1 ? value : value.slice(equalsIndex + 1);
-  const normalized = rightHandSide
+  const normalized = linearizeLatexFractions(rightHandSide)
     .toLowerCase()
+    .replaceAll("\\left", "")
+    .replaceAll("\\right", "")
+    .replaceAll("\\cdot", "*")
+    .replaceAll("\\times", "*")
     .replaceAll("×", "*")
     .replaceAll("·", "*")
     .replace(/\s+/g, "");

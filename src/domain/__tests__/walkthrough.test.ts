@@ -30,6 +30,26 @@ describe("advanceWalkthrough", () => {
     });
   });
 
+  it.each([
+    ["recall_formula", "P=(a+b)*h/2", "substitute_values"],
+    ["substitute_values", "(6+10)*4/2", "calculate"]
+  ] as const)("advances %s when OKF supplies the formula as LaTeX", (stage, answer, nextStage) => {
+    const latexConcept = {
+      ...trapezoidConcept,
+      atoms: [
+        {
+          ...trapezoidConcept.atoms[0],
+          text: "P = \\frac{(a + b) \\cdot h}{2}"
+        }
+      ]
+    };
+
+    expect(advanceWalkthrough({ ...input(stage, answer), concept: latexConcept })).toMatchObject({
+      nextStage,
+      correctness: "correct"
+    });
+  });
+
   it("completes after the prepared result with an accepted unit", () => {
     expect(advanceWalkthrough(input("calculate", "32 cm²"))).toMatchObject({
       nextStage: "complete",
