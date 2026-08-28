@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IntentInterpreter, StudentIntent } from "@/domain/intent";
-import type { OkfRepository } from "@/domain/okf";
+import type { OkfRepository, ReviewStatus } from "@/domain/okf";
 import type { TutorSession } from "@/domain/walkthrough";
 import { createTutorHandler } from "@/app/api/tutor/handler";
 
@@ -154,6 +154,56 @@ describe("createTutorHandler", () => {
       }
     });
   });
+
+  it.each([
+    {
+      action: "start",
+      conceptStatus: "draft",
+      formulaStatus: "published",
+      expectedStatus: "draft"
+    },
+    {
+      action: "start",
+      conceptStatus: "pending",
+      formulaStatus: "approved",
+      expectedStatus: "pending"
+    },
+    {
+      action: "answer",
+      conceptStatus: "published",
+      formulaStatus: "pending",
+      expectedStatus: "pending"
+    },
+    {
+      action: "answer",
+      conceptStatus: "draft",
+      formulaStatus: "published",
+      expectedStatus: "draft"
+    }
+  ] satisfies Array<{
+    action: "start" | "answer";
+    conceptStatus: ReviewStatus;
+    formulaStatus: ReviewStatus;
+    expectedStatus: ReviewStatus;
+  }>)(
+    "preserves $expectedStatus review status for $action when concept is $conceptStatus and formula is $formulaStatus",
+    async ({ action, conceptStatus, formulaStatus, expectedStatus }) => {
+      getConcept.mockResolvedValueOnce({
+        ...concept,
+        reviewStatus: conceptStatus,
+        atoms: [{ ...concept.atoms[0], reviewStatus: formulaStatus }]
+      });
+
+      const requestBody =
+        action === "start"
+          ? { action, message: "Chcę obliczyć pole trapezu" }
+          : { action, message: "P=(a+b)*h/2", session };
+      const response = await handler()(requestFor(requestBody));
+
+      expect(response.status).toBe(200);
+      expect(await json(response)).toMatchObject({ reviewStatus: expectedStatus });
+    }
+  );
 
   it("short-circuits a crisis before every OKF operation", async () => {
     interpret.mockResolvedValueOnce({

@@ -58,6 +58,18 @@ const jsonResponse = (body: TutorResponse): Response => Response.json(body);
 
 const failedUpstreamResponse = (): Response => Response.json(UPSTREAM_FAILURE, { status: 502 });
 
+const reviewStatusPriority: Record<ReviewStatus, number> = {
+  draft: 0,
+  pending: 1,
+  approved: 2,
+  published: 3
+};
+
+const leastReviewedStatus = (...statuses: ReviewStatus[]): ReviewStatus =>
+  statuses.reduce((leastReviewed, status) =>
+    reviewStatusPriority[status] < reviewStatusPriority[leastReviewed] ? status : leastReviewed
+  );
+
 export const createTutorHandler =
   (deps: TutorDependencies) =>
   async (request: Request): Promise<Response> => {
@@ -112,6 +124,7 @@ export const createTutorHandler =
       if (!concept || !formulaAtom) return failedUpstreamResponse();
 
       const prefix = safety.mode === "supportive" ? safety.prefix : "";
+      const reviewStatus = leastReviewedStatus(concept.reviewStatus, formulaAtom.reviewStatus);
 
       if (body.action === "start") {
         const parsedSession = sessionSchema.safeParse({
@@ -128,7 +141,7 @@ export const createTutorHandler =
         return jsonResponse({
           reply: `${prefix}Jaki jest wzór na ${concept.name.toLowerCase()}?`,
           session,
-          reviewStatus: formulaAtom.reviewStatus,
+          reviewStatus,
           trace: {
             intent: intent.intent,
             conceptName: concept.name,
@@ -153,7 +166,7 @@ export const createTutorHandler =
           stage: decision.nextStage,
           hintLevel: decision.hintLevel
         },
-        reviewStatus: formulaAtom.reviewStatus,
+        reviewStatus,
         trace: {
           intent: intent.intent,
           conceptName: concept.name,
