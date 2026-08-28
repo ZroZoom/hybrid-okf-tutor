@@ -8,6 +8,7 @@ export const trapezoidConcept: OkfConcept = {
     {
       id: "trapezoid-area-formula",
       type: "formula",
+      title: "Pole trapezu",
       text: "P = ((a + b) * h) / 2",
       reviewStatus: "published"
     }

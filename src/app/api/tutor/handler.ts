@@ -137,7 +137,11 @@ export const createTutorHandler =
       if (!conceptId) return failedUpstreamResponse();
 
       const concept = await deps.okfRepository.getConcept(conceptId, level);
-      const formulaAtom = concept?.atoms.find((atom) => atom.type === "formula");
+      const formulaAtom = concept?.atoms.find(
+        (atom) =>
+          atom.type === "formula" &&
+          atom.title.trim().toLocaleLowerCase("pl-PL") === "pole trapezu"
+      );
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();
 

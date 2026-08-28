@@ -89,6 +89,7 @@ const concept = {
     {
       id: "trapez-formula",
       type: "formula",
+      title: "Pole trapezu",
       text: "P = ((a + b) * h) / 2",
       reviewStatus: "published"
     }

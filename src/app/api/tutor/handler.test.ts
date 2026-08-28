@@ -25,6 +25,7 @@ const concept = {
     {
       id: "trapezoid-area-formula",
       type: "formula",
+      title: "Pole trapezu",
       text: "P = ((a + b) * h) / 2",
       reviewStatus: "published" as const
     }
@@ -192,6 +193,34 @@ describe("createTutorHandler", () => {
         atomType: "formula",
         ruleName: "recall_formula"
       }
+    });
+  });
+
+  it("selects the area formula when another trapezoid formula is returned first", async () => {
+    getConcept.mockResolvedValueOnce({
+      ...concept,
+      atoms: [
+        {
+          ...concept.atoms[0],
+          id: "trapezoid-midline-formula",
+          title: "Linia środkowa",
+          text: "m = (a + b) / 2"
+        },
+        {
+          ...concept.atoms[0],
+          title: "Pole trapezu"
+        }
+      ]
+    });
+
+    const response = await handler()(
+      requestFor({ action: "answer", message: "P=(a+b)*h/2", session })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await json(response)).toMatchObject({
+      reply: "Dobrze. Jakie wartości podstawisz za a, b i h?",
+      session: { stage: "substitute_values" }
     });
   });
 

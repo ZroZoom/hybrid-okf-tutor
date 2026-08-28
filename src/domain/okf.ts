@@ -10,6 +10,7 @@ export type ConceptSummary = {
 export type OkfAtom = {
   id: string;
   type: string;
+  title: string;
   text: string;
   reviewStatus: ReviewStatus;
 };

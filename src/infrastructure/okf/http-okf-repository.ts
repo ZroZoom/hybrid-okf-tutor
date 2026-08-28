@@ -108,6 +108,7 @@ const conceptResponseSchema = z
           atoms: result.atoms.map((atom) => ({
             id: atom.atomId,
             type: atom.type,
+            title: atom.title,
             text: atom.body,
             reviewStatus: atom.reviewStatus.status
           })),
