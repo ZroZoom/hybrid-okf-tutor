@@ -60,6 +60,7 @@ const failedUpstreamResponse = (): Response => Response.json(UPSTREAM_FAILURE, {
 
 const reviewStatusPriority: Record<ReviewStatus, number> = {
   draft: 0,
+  unversioned: 0,
   pending: 1,
   approved: 2,
   published: 3
@@ -105,20 +106,22 @@ export const createTutorHandler =
         });
       }
 
+      const level = intent.level ?? "E8";
+
       const conceptId =
         body.action === "start"
           ? (
               await deps.okfRepository.searchConcepts(
                 intent.rewrittenQuery,
                 intent.subject ?? "matematyka",
-                intent.level
+                level
               )
             )[0]?.id
           : body.session.conceptId;
 
       if (!conceptId) return failedUpstreamResponse();
 
-      const concept = await deps.okfRepository.getConcept(conceptId, intent.level);
+      const concept = await deps.okfRepository.getConcept(conceptId, level);
       const formulaAtom = concept?.atoms.find((atom) => atom.type === "formula");
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();

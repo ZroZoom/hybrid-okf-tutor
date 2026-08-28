@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TutorDemo } from "@/components/tutor-demo";
 
@@ -35,6 +35,22 @@ afterEach(() => {
 });
 
 describe("TutorDemo", () => {
+  it("marks unversioned OKF knowledge as DEV/UNREVIEWED", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      jsonResponse({
+        ...tutorResponse("Jaki jest wzór na pole trapezu?", "recall_formula", "recall_formula"),
+        reviewStatus: "unversioned"
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<TutorDemo />);
+    fireEvent.click(screen.getByRole("button", { name: "Rozpocznij demo" }));
+
+    await screen.findByText("Jaki jest wzór na pole trapezu?");
+    expect(screen.getAllByText("DEV/UNREVIEWED").length).toBeGreaterThan(0);
+  });
+
   it("guides the learner through the real four-call walkthrough", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
@@ -91,7 +107,8 @@ describe("TutorDemo", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Rozpocznij demo" }));
 
-    expect(await screen.findByText("Jaki jest wzór na pole trapezu?")).toHaveFocus();
+    const firstTutorMessage = await screen.findByText("Jaki jest wzór na pole trapezu?");
+    await waitFor(() => expect(firstTutorMessage).toHaveFocus());
     expect(screen.getAllByText("DEV/UNREVIEWED").length).toBeGreaterThan(0);
     expect(screen.getByText("Luna: formula · trapez")).toBeInTheDocument();
     expect(screen.getByText("OKF: trapez · formula · DEV/UNREVIEWED")).toBeInTheDocument();

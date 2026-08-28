@@ -20,7 +20,7 @@ type TutorTrace = {
   ruleName: string;
 };
 
-type ReviewStatus = "draft" | "pending" | "approved" | "published";
+type ReviewStatus = "draft" | "pending" | "approved" | "published" | "unversioned";
 
 type TutorResponse = {
   reply: string;
@@ -127,7 +127,9 @@ export function TutorDemo() {
     setSession(response.session);
     setTrace(response.trace);
     setIsUnreviewed(
-      response.reviewStatus === "draft" || response.reviewStatus === "pending"
+      response.reviewStatus === "draft" ||
+        response.reviewStatus === "pending" ||
+        response.reviewStatus === "unversioned"
     );
   };
 

@@ -1,4 +1,4 @@
-export type ReviewStatus = "draft" | "pending" | "approved" | "published";
+export type ReviewStatus = "draft" | "pending" | "approved" | "published" | "unversioned";
 
 export type ConceptSummary = {
   id: string;
@@ -30,6 +30,6 @@ export type OkfConcept = {
 };
 
 export interface OkfRepository {
-  searchConcepts(query: string, subject: string, level: string | null): Promise<ConceptSummary[]>;
-  getConcept(conceptId: string, level: string | null): Promise<OkfConcept | null>;
+  searchConcepts(query: string, subject: string, level: string): Promise<ConceptSummary[]>;
+  getConcept(conceptId: string, level: string): Promise<OkfConcept | null>;
 }

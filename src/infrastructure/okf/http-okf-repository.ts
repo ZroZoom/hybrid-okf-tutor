@@ -3,57 +3,138 @@ import { z } from "zod";
 import type { ConceptSummary, OkfConcept, OkfRepository } from "@/domain/okf";
 import { getServerEnv, type ServerEnv } from "@/lib/env";
 
-const reviewStatusSchema = z.enum(["draft", "pending", "approved", "published"]);
+const reviewStatusValueSchema = z.enum([
+  "draft",
+  "pending",
+  "approved",
+  "published",
+  "unversioned"
+]);
 
-const conceptSummarySchema = z
+const wireReviewStatusSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
+    status: reviewStatusValueSchema,
+    unreviewed: z.boolean(),
+    needsReReview: z.boolean().nullable()
+  })
+  .strict();
+
+const wireConceptSummarySchema = z
+  .object({
+    conceptId: z.string(),
+    term: z.string(),
     subject: z.string(),
-    reviewStatus: reviewStatusSchema
+    topic: z.string().nullable(),
+    reviewStatus: wireReviewStatusSchema
   })
   .strict();
 
-const atomSchema = z
+const wireConceptSchema = z
   .object({
-    id: z.string(),
+    conceptId: z.string(),
+    term: z.string(),
+    aliases: z.array(z.string()),
+    subject: z.string(),
+    topic: z.string().nullable(),
+    reviewStatus: wireReviewStatusSchema
+  })
+  .strict();
+
+const wireAtomSchema = z
+  .object({
+    atomId: z.string(),
+    conceptId: z.string(),
     type: z.string(),
-    text: z.string(),
-    reviewStatus: reviewStatusSchema
+    level: z.string(),
+    minLevel: z.string().nullable(),
+    title: z.string(),
+    body: z.string(),
+    order: z.number(),
+    reviewStatus: wireReviewStatusSchema
   })
   .strict();
 
-const linkedEntitySchema = z
+const wireRelationSchema = z
   .object({
-    id: z.string(),
-    reviewStatus: reviewStatusSchema
-  })
-  .strict();
+    relationId: z.string(),
+    reviewStatus: wireReviewStatusSchema
+  });
 
-const conceptSchema = z
+const wireCurriculumSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    reviewStatus: reviewStatusSchema,
-    atoms: z.array(atomSchema),
-    relations: z.array(linkedEntitySchema),
-    curriculum: z.array(linkedEntitySchema),
-    skills: z.array(linkedEntitySchema)
-  })
-  .strict();
+    curriculumId: z.string(),
+    reviewStatus: wireReviewStatusSchema
+  });
 
-const searchResponseSchema = z.array(conceptSummarySchema);
-const conceptResponseSchema = conceptSchema.nullable();
+const wireSkillSchema = z.object({
+  skillId: z.string(),
+  reviewStatus: wireReviewStatusSchema
+});
+
+const searchResponseSchema = z
+  .object({ results: z.array(wireConceptSummarySchema) })
+  .strict()
+  .transform(({ results }): ConceptSummary[] =>
+    results.map((result) => ({
+      id: result.conceptId,
+      name: result.term,
+      subject: result.subject,
+      reviewStatus: result.reviewStatus.status
+    }))
+  );
+
+const conceptResponseSchema = z
+  .object({
+    result: z
+      .object({
+        concept: wireConceptSchema,
+        atoms: z.array(wireAtomSchema),
+        relations: z.array(wireRelationSchema),
+        curriculum: z.array(wireCurriculumSchema),
+        skills: z.array(wireSkillSchema),
+        reviewStatus: wireReviewStatusSchema
+      })
+      .strict()
+      .nullable()
+  })
+  .strict()
+  .transform(({ result }): OkfConcept | null =>
+    result
+      ? {
+          id: result.concept.conceptId,
+          name: result.concept.term,
+          reviewStatus: result.reviewStatus.status,
+          atoms: result.atoms.map((atom) => ({
+            id: atom.atomId,
+            type: atom.type,
+            text: atom.body,
+            reviewStatus: atom.reviewStatus.status
+          })),
+          relations: result.relations.map((relation) => ({
+            id: relation.relationId,
+            reviewStatus: relation.reviewStatus.status
+          })),
+          curriculum: result.curriculum.map((entry) => ({
+            id: entry.curriculumId,
+            reviewStatus: entry.reviewStatus.status
+          })),
+          skills: result.skills.map((skill) => ({
+            id: skill.skillId,
+            reviewStatus: skill.reviewStatus.status
+          }))
+        }
+      : null
+  );
 
 export class HttpOkfRepository implements OkfRepository {
   constructor(private readonly env: ServerEnv) {}
 
-  async searchConcepts(query: string, subject: string, level: string | null): Promise<ConceptSummary[]> {
-    return this.request(searchResponseSchema, { operation: "searchConcepts", query, subject, level });
+  async searchConcepts(query: string, subject: string, level: string): Promise<ConceptSummary[]> {
+    return this.request(searchResponseSchema, { op: "searchConcepts", query, subject, level });
   }
 
-  async getConcept(conceptId: string, level: string | null): Promise<OkfConcept | null> {
-    return this.request(conceptResponseSchema, { operation: "getConcept", conceptId, level });
+  async getConcept(conceptId: string, level: string): Promise<OkfConcept | null> {
+    return this.request(conceptResponseSchema, { op: "getConcept", conceptId, level });
   }
 
   private async request<T>(schema: z.ZodType<T>, body: Record<string, unknown>): Promise<T> {

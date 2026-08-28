@@ -107,6 +107,18 @@ describe("createTutorHandler", () => {
     });
   });
 
+  it("uses the required E8 level when the interpreter omits it", async () => {
+    interpret.mockResolvedValueOnce({ ...normalIntent, level: null });
+
+    const response = await handler()(
+      requestFor({ action: "start", message: "Chcę obliczyć pole trapezu" })
+    );
+
+    expect(response.status).toBe(200);
+    expect(searchConcepts).toHaveBeenCalledWith("pole trapezu", "matematyka", "E8");
+    expect(getConcept).toHaveBeenCalledWith("trapez-id", "E8");
+  });
+
   it("maps an overlong upstream concept ID to a generic 502 without leaking it", async () => {
     const overlongConceptId = `upstream-private-${"x".repeat(84)}`;
     searchConcepts.mockResolvedValueOnce([
@@ -179,6 +191,12 @@ describe("createTutorHandler", () => {
       conceptStatus: "draft",
       formulaStatus: "published",
       expectedStatus: "draft"
+    },
+    {
+      action: "answer",
+      conceptStatus: "published",
+      formulaStatus: "unversioned",
+      expectedStatus: "unversioned"
     }
   ] satisfies Array<{
     action: "start" | "answer";
