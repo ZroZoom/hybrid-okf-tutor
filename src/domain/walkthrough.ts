@@ -82,7 +82,7 @@ const linearizeLatexFractions = (value: string): string => {
   return result;
 };
 
-const normalizeExpression = (value: string): string => {
+const normalizeExpression = (value: string, trustedFormula = false): string => {
   const equalsIndex = value.indexOf("=");
   const rightHandSide = equalsIndex === -1 ? value : value.slice(equalsIndex + 1);
   const normalized = linearizeLatexFractions(rightHandSide)
@@ -91,6 +91,8 @@ const normalizeExpression = (value: string): string => {
     .replaceAll("\\right", "")
     .replaceAll("\\cdot", "*")
     .replaceAll("\\times", "*")
+    .replaceAll("\\,", "")
+    .replaceAll("\\;", "")
     .replaceAll("×", "*")
     .replaceAll("·", "*")
     .replaceAll("÷", "/")
@@ -99,7 +101,7 @@ const normalizeExpression = (value: string): string => {
     .replaceAll("$", "")
     .replace(/\s+/g, "");
 
-  return normalized;
+  return trustedFormula ? normalized.replaceAll("**", "") : normalized;
 };
 
 type FormulaVariables = Record<"a" | "b" | "h", number>;
@@ -111,14 +113,20 @@ type ExpressionToken =
   | { type: "left-parenthesis" }
   | { type: "right-parenthesis" };
 
-const tokenizeExpression = (value: string): ExpressionToken[] | null => {
-  const expression = normalizeExpression(value);
+const tokenizeExpression = (
+  value: string,
+  allowTrailingAnnotation = false
+): ExpressionToken[] | null => {
+  const expression = normalizeExpression(value, allowTrailingAnnotation);
   const tokens: ExpressionToken[] = [];
 
   for (let index = 0; index < expression.length; ) {
     const character = expression[index];
 
-    if (/[0-9.,]/.test(character)) {
+    if (
+      /[0-9]/.test(character) ||
+      ((character === "." || character === ",") && /[0-9]/.test(expression[index + 1] ?? ""))
+    ) {
       let end = index + 1;
       while (end < expression.length && /[0-9.,]/.test(expression[end])) end += 1;
 
@@ -157,14 +165,19 @@ const tokenizeExpression = (value: string): ExpressionToken[] | null => {
       continue;
     }
 
+    if (allowTrailingAnnotation && tokens.length > 0) break;
     return null;
   }
 
   return tokens.length > 0 ? tokens : null;
 };
 
-const evaluateExpression = (value: string, variables: FormulaVariables): number | null => {
-  const tokens = tokenizeExpression(value);
+const evaluateExpression = (
+  value: string,
+  variables: FormulaVariables,
+  allowTrailingAnnotation = false
+): number | null => {
+  const tokens = tokenizeExpression(value, allowTrailingAnnotation);
   if (!tokens) return null;
 
   let index = 0;
@@ -262,7 +275,7 @@ const equivalentFormula = (answer: string, formula: string): boolean =>
     { a: 7, b: 1, h: 5 }
   ].every((variables) => {
     const answerValue = evaluateExpression(answer, variables);
-    const formulaValue = evaluateExpression(formula, variables);
+    const formulaValue = evaluateExpression(formula, variables, true);
     return answerValue !== null && formulaValue !== null && approximatelyEqual(answerValue, formulaValue);
   });
 
@@ -283,7 +296,7 @@ const equivalentSubstitution = (
   if (!includesTaskValues) return false;
 
   const answerValue = evaluateExpression(answer, task);
-  const formulaValue = evaluateExpression(formula, task);
+  const formulaValue = evaluateExpression(formula, task, true);
   return answerValue !== null && formulaValue !== null && approximatelyEqual(answerValue, formulaValue);
 };
 

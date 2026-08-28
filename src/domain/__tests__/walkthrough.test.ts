@@ -52,7 +52,8 @@ describe("advanceWalkthrough", () => {
 
   it.each([
     "P = \\frac{1}{2}(a + b) \\cdot h",
-    "P = (a + b) / 2 * h"
+    "P = (a + b) / 2 * h",
+    "**P = \\frac{(a + b) \\cdot h}{2}**, gdzie a i b to podstawy, a h to wysokość."
   ])("accepts an equivalent OKF formula representation: %s", (formulaText) => {
     const equivalentConcept = {
       ...trapezoidConcept,
@@ -76,6 +77,15 @@ describe("advanceWalkthrough", () => {
   it("does not let a final number skip the substitution step", () => {
     expect(advanceWalkthrough(input("substitute_values", "32"))).toMatchObject({
       nextStage: "substitute_values",
+      correctness: "incorrect"
+    });
+  });
+
+  it("does not ignore trailing prose in a student formula", () => {
+    expect(
+      advanceWalkthrough(input("recall_formula", "P=(a+b)*h/2 przypadkowy tekst"))
+    ).toMatchObject({
+      nextStage: "recall_formula",
       correctness: "incorrect"
     });
   });

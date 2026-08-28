@@ -150,39 +150,13 @@ export const createTutorHandler =
 
       const concept = await deps.okfRepository.getConcept(conceptId, level);
       const formulaAtoms = concept?.atoms.filter((atom) => atom.type === "formula") ?? [];
-      const semanticFormula = formulaAtoms.find((atom) => isTrapezoidAreaFormula(atom.text));
       const formulaAtom =
-        semanticFormula ??
+        formulaAtoms.find((atom) => isTrapezoidAreaFormula(atom.text)) ??
         formulaAtoms.find(
           (atom) => atom.title.trim().toLocaleLowerCase("pl-PL") === "pole trapezu"
         );
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();
-
-      if (body.action === "answer") {
-        const equalsIndex = formulaAtom.text.indexOf("=");
-        const rightHandSide = equalsIndex === -1 ? formulaAtom.text : formulaAtom.text.slice(equalsIndex + 1);
-        const lettersWithoutLatexCommands = rightHandSide
-          .replace(/\\(?:d?frac|cdot|times|left|right)/g, "")
-          .replace(/[abhp]/gi, "")
-          .match(/[a-z]/gi);
-
-        console.info("Tutor formula metadata.", {
-          formulaCount: formulaAtoms.length,
-          selectedBy: semanticFormula === formulaAtom ? "semantics" : "title",
-          textLength: formulaAtom.text.length,
-          equalsIndex,
-          hasA: /\ba\b/i.test(rightHandSide),
-          hasB: /\bb\b/i.test(rightHandSide),
-          hasH: /\bh\b/i.test(rightHandSide),
-          hasLatexFraction: /\\d?frac/.test(rightHandSide),
-          hasUnicodeMultiply: /[×·]/.test(rightHandSide),
-          hasUnicodeDivide: /÷/.test(rightHandSide),
-          hasPower: /[\^²]/.test(rightHandSide),
-          hasSquareBrackets: /[\[\]]/.test(rightHandSide),
-          unsupportedLetterCount: lettersWithoutLatexCommands?.length ?? 0
-        });
-      }
 
       const prefix = safety.mode === "supportive" ? safety.prefix : "";
       const reviewStatus = leastReviewedStatus(concept.reviewStatus, formulaAtom.reviewStatus);
