@@ -57,7 +57,8 @@ describe("advanceWalkthrough", () => {
     String.raw`**P = \\frac{(a + b) \\cdot h}{2}**, gdzie a i b to podstawy, a h to wysokość.`,
     String.raw`**P = \dfrac{(a + b) \cdot h}{2}**, gdzie a i b to podstawy, a h to wysokość.`,
     String.raw`**P = \displaystyle \dfrac{(a + b) \cdot h}{2}**, gdzie a i b to podstawy, a h to wysokość.`,
-    String.raw`**P = \\displaystyle \\dfrac{(a + b) \\cdot h}{2}**, gdzie a i b to podstawy, a h to wysokość.`
+    String.raw`**P = \\displaystyle \\dfrac{(a + b) \\cdot h}{2}**, gdzie a i b to podstawy, a h to wysokość.`,
+    String.raw`**P = \frac{(a + b) \cdot h}{2}** $a$, $b$ — podstawy, $h$ — wysokość.`
   ])("accepts an equivalent OKF formula representation: %s", (formulaText) => {
     const equivalentConcept = {
       ...trapezoidConcept,
