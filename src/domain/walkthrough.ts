@@ -281,16 +281,42 @@ const evaluateExpression = (
 const approximatelyEqual = (left: number, right: number): boolean =>
   Math.abs(left - right) <= Number.EPSILON * 100 * Math.max(1, Math.abs(left), Math.abs(right));
 
-const equivalentFormula = (answer: string, formula: string): boolean =>
-  [
+const equivalentFormula = (answer: string, formula: string): boolean => {
+  const probes: FormulaVariables[] = [
     { a: 2, b: 5, h: 3 },
     { a: 4, b: 9, h: 2 },
     { a: 7, b: 1, h: 5 }
-  ].every((variables) => {
+  ];
+  const evaluations = probes.map((variables) => {
     const answerValue = evaluateExpression(answer, variables);
     const formulaValue = evaluateExpression(formula, variables, true);
-    return answerValue !== null && formulaValue !== null && approximatelyEqual(answerValue, formulaValue);
+    return {
+      answerValue,
+      formulaValue,
+      matches:
+        answerValue !== null &&
+        formulaValue !== null &&
+        approximatelyEqual(answerValue, formulaValue)
+    };
   });
+  const matches = evaluations.every((evaluation) => evaluation.matches);
+
+  if (!matches) {
+    const normalizedFormula = normalizeExpression(formula, true);
+    const formulaTokens = tokenizeExpression(formula, true);
+
+    console.info("Tutor formula evaluation shape.", {
+      normalizedLength: normalizedFormula.length,
+      tokenCount: formulaTokens?.length ?? -1,
+      formulaEvaluatedCount: evaluations.filter(({ formulaValue }) => formulaValue !== null).length,
+      answerEvaluatedCount: evaluations.filter(({ answerValue }) => answerValue !== null).length,
+      matchingProbeCount: evaluations.filter(({ matches: probeMatches }) => probeMatches).length,
+      firstUnsupportedCharacterIndex: normalizedFormula.search(/[^0-9.,abh+\-*/()]/)
+    });
+  }
+
+  return matches;
+};
 
 const equivalentSubstitution = (
   answer: string,
