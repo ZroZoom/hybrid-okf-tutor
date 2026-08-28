@@ -1,0 +1,5 @@
+# 10x CLI toolkit — installed skills, manifest, and lockfile (not project source)
+.claude/.10x-cli-manifest.json
+.claude/skills/10x-*/
+.agents/skills/10x-*/
+skills-lock.json
