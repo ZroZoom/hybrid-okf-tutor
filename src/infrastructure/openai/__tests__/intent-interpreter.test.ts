@@ -38,9 +38,9 @@ describe("studentIntentSchema", () => {
 
 describe("OpenAiIntentInterpreter", () => {
   it("classifies with Luna low reasoning and strict structured output", async () => {
-    const parse = vi.fn().mockResolvedValue({ output_parsed: validIntent });
+    const create = vi.fn().mockResolvedValue({ output_text: JSON.stringify(validIntent) });
     const client = {
-      responses: { parse }
+      responses: { create }
     } as unknown as ConstructorParameters<typeof OpenAiIntentInterpreter>[0];
     const interpreter = new OpenAiIntentInterpreter(client);
 
@@ -48,7 +48,7 @@ describe("OpenAiIntentInterpreter", () => {
       validIntent
     );
 
-    expect(parse).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: "gpt-5.6-luna",
         reasoning: { effort: "low" },
@@ -59,7 +59,23 @@ describe("OpenAiIntentInterpreter", () => {
           format: expect.objectContaining({
             type: "json_schema",
             name: "student_intent",
-            strict: true
+            strict: true,
+            schema: expect.objectContaining({
+              type: "object",
+              required: [
+                "subject",
+                "level",
+                "intent",
+                "concepts",
+                "requestedAnswerType",
+                "ambiguity",
+                "missingEntity",
+                "rewrittenQuery",
+                "emotionalSignal",
+                "responseMode"
+              ],
+              additionalProperties: false
+            })
           })
         }
       })
@@ -68,7 +84,7 @@ describe("OpenAiIntentInterpreter", () => {
 
   it("fails closed when the response has no parsed intent", async () => {
     const client = {
-      responses: { parse: vi.fn().mockResolvedValue({ output_parsed: null }) }
+      responses: { create: vi.fn().mockResolvedValue({ output_text: "" }) }
     } as unknown as ConstructorParameters<typeof OpenAiIntentInterpreter>[0];
 
     await expect(new OpenAiIntentInterpreter(client).interpret("Pomocy", "start")).rejects.toThrow(
