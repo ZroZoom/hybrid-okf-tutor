@@ -3,6 +3,7 @@ project: "Hybrid Tutor"
 context_type: greenfield
 created: 2026-08-28
 updated: 2026-08-28
+revision_note: "2026-08-28: zintegrowano z P0 (docs/spec, docs/adr) po decyzjach zespołu — patrz roadmap.md"
 product_type: web-app
 target_scale:
   users: small
@@ -46,6 +47,16 @@ checkpoint:
       decision: "brak sztywnego terminu; praca po godzinach; mvp_weeks: 3"
     - topic: "non-goals"
       decision: "widok rodzica, agregacja danych między uczniami, zakres poza klasy 7-8/matematykę — wszystkie poza MVP"
+    - topic: "integracja z P0 (2026-08-28) — warstwa bezpieczeństwa/emocjonalna"
+      decision: "obowiązuje zawsze, dziedziczona z P0 (roadmap.md pkt 1)"
+    - topic: "integracja z P0 (2026-08-28) — źródło pytań diagnostycznych"
+      decision: "ten sam zasób (OKF/repozytorium wiedzy), co reszta produktu (roadmap.md pkt 2)"
+    - topic: "integracja z P0 (2026-08-28) — logowanie"
+      decision: "bez logowania, dziedziczone z P0; FR-001 i Access Control zaktualizowane (roadmap.md pkt 3)"
+    - topic: "integracja z P0 (2026-08-28) — pokrycie OKF dla klas 7-8"
+      decision: "potwierdzone wystarczające (roadmap.md pkt 4)"
+    - topic: "integracja z P0 (2026-08-28) — stack"
+      decision: "zostajemy przy stacku zablokowanym w ADR-ach P0, patrz sekcja Forward: tech-stack (roadmap.md pkt 5)"
   frs_drafted: 7
   quality_check_status: accepted
 ---
@@ -64,29 +75,29 @@ Ugruntowana wiedza (repozytorium + silnik RAG) eliminuje halucynacje, które są
 
 ## Access Control
 
-Logowanie (email+hasło / OAuth / bez hasła — konkretny mechanizm do doprecyzowania downstream). Dwie role:
+**Zmiana 2026-08-28** (integracja z P0, patrz `roadmap.md` pkt 3): brak logowania. Uczeń korzysta z produktu bez zakładania konta, zgodnie z podejściem już przyjętym w P0 (publiczne demo bez kont). Poprzednia wersja tej sekcji zakładała logowanie + role uczeń/rodzic — zastąpiona poniższą decyzją.
 
-- **Uczeń** — główny użytkownik; korzysta z pełnego przepływu nauki (diagnoza, plan, historia własnej nauki).
-- **Rodzic** — widzi postępy swojego dziecka (zakres uprawnień rodzica poza samym podglądem postępów — do doprecyzowania).
+Uczeń korzysta z pełnego przepływu nauki (diagnoza, lista ćwiczeń, postęp) bez konta. Mechanizm zachowania ciągłości diagnozy/postępu między sesjami bez konta: nie sprecyzowano — do ustalenia downstream.
 
-Zachowanie niezalogowanego użytkownika trafiającego na chronioną trasę: nie sprecyzowano.
+Rola rodzica (podgląd postępów) pozostaje odłożona do v2 — bez logowania w MVP nie ma jeszcze do czego rodzica podłączyć.
 
 ## Success Criteria
 
 ### Primary
-- Uczeń loguje się / zakłada profil, przechodzi diagnozę poziomu umiejętności i obszarów z lukami (zakres klas 7-8), otrzymuje mapę luk, dostaje statyczną uporządkowaną listę ćwiczeń w zdiagnozowanych obszarach, ćwiczy zadania z listy, i widzi swój postęp (ukończone/pozostałe).
+- Uczeń (bez logowania) przechodzi diagnozę poziomu umiejętności i obszarów z lukami (zakres klas 7-8), otrzymuje mapę luk, dostaje statyczną uporządkowaną listę ćwiczeń w zdiagnozowanych obszarach, ćwiczy zadania z listy, i widzi swój postęp (ukończone/pozostałe).
 
 ### Secondary
 - Uczeń wraca do aplikacji więcej niż raz.
 
 ### Guardrails
 - Zero halucynacji — każda odpowiedź ugruntowana w repozytorium wiedzy.
+- Warstwa bezpieczeństwa/emocjonalna obowiązuje zawsze (decyzja 2026-08-28, patrz `roadmap.md` pkt 1) — przy jawnym sygnale kryzysowym ma pierwszeństwo nad przepływem edukacyjnym.
 
 ## Functional Requirements
 
 ### Dostęp
-- FR-001: Uczeń może się zalogować / założyć profil. Priority: must-have
-  > Socrates: Brak kontrargumentu; zostaje jak jest.
+- ~~FR-001: Uczeń może się zalogować / założyć profil.~~ USUNIĘTE — 2026-08-28: decyzja "bez logowania" przy integracji z P0 (patrz `roadmap.md` pkt 3, sekcja Access Control powyżej).
+  > Socrates: Brak kontrargumentu w rundzie sokratejskiej; usunięte później zewnętrzną decyzją zespołu, nie w wyniku tej rundy.
 
 ### Diagnoza
 - FR-002: Uczeń może przejść diagnozę poziomu umiejętności i obszarów z lukami (zakres klas 7-8). Priority: must-have
@@ -110,7 +121,7 @@ Zachowanie niezalogowanego użytkownika trafiającego na chronioną trasę: nie 
 
 ### US-01: Uczeń diagnozuje i nadrabia luki przed egzaminem ósmoklasisty
 
-- **Given** zalogowany uczeń bez wcześniejszej diagnozy
+- **Given** uczeń (bez konta) bez wcześniejszej diagnozy
 - **When** przechodzi diagnozę poziomu umiejętności
 - **Then** otrzymuje mapę swoich luk i uporządkowaną listę ćwiczeń dopasowaną do tych luk, a każde ćwiczenie daje odpowiedź ugruntowaną w repozytorium wiedzy (bez halucynacji)
 
@@ -124,7 +135,7 @@ Zachowanie niezalogowanego użytkownika trafiającego na chronioną trasę: nie 
 
 **System diagnozuje luki ucznia i dobiera ćwiczenia dopasowane do jego indywidualnego poziomu.**
 
-Regułę zasilają odpowiedzi ucznia na zestaw pytań diagnostycznych obejmujący zakres klas 7-8 — poprawność i błędy tych odpowiedzi wskazują konkretne obszary, w których uczeń ma luki.
+Regułę zasilają odpowiedzi ucznia na zestaw pytań diagnostycznych obejmujący zakres klas 7-8 — poprawność i błędy tych odpowiedzi wskazują konkretne obszary, w których uczeń ma luki. Pytania diagnostyczne pochodzą z tego samego zasobu wiedzy (repozytorium/OKF), co odpowiedzi i wyjaśnienia w reszcie produktu — decyzja 2026-08-28, patrz `roadmap.md` pkt 2.
 
 Wyjściem reguły jest uporządkowana lista ćwiczeń, w której obszary o największej luce idą jako pierwsze — priorytetyzacja według wielkości/wagi zdiagnozowanej luki, a nie według z góry ustalonej kolejności programu.
 
@@ -133,9 +144,14 @@ Uczeń spotyka tę regułę jako ciągłość doświadczenia: kończy diagnozę 
 ## Non-Functional Requirements
 
 - Uczeń otrzymuje odpowiedź (feedback po ćwiczeniu / odpowiedź na dopytanie) w czasie < 3 sekund od wysłania zapytania.
+- Produkt wykrywa sygnał emocjonalny ucznia (frustracja/zniechęcenie/dystres/kryzys) i przy jawnym sygnale kryzysowym przerywa przepływ edukacyjny na rzecz bezpiecznej, deterministycznej odpowiedzi — obowiązuje zawsze, nie tylko w P0 demo. Decyzja 2026-08-28, patrz `roadmap.md` pkt 1.
 
 ## Non-Goals
 
 - **Widok rodzica (podgląd postępów dziecka)** — odłożony do v2; MVP skupia się wyłącznie na uczniu.
 - **Agregacja danych między uczniami** (uczenie się reguły doboru ćwiczeń z danych wielu osób) — możliwe ulepszenie reguły domenowej przy większej skali, ale poza zakresem MVP.
 - **Wykraczanie poza zakres klas 7-8 / matematykę** — MVP obejmuje wyłącznie matematykę na poziomie klas 7-8 (przygotowanie do egzaminu ósmoklasisty), żadnych innych przedmiotów ani poziomów.
+
+## Forward: tech-stack
+
+Decyzja 2026-08-28 (patrz `roadmap.md` pkt 5): zostajemy przy stacku już zablokowanym w `docs/adr/` i `docs/plans/2026-08-28-implementation-plan.md` dla P0 — Next.js 16, React 19, TypeScript strict, pnpm, Vitest, Zod, Supabase Edge Functions/Deno, Vercel, OpenAI Responses API (`gpt-5.6-luna`). Downstream krok doboru stacku (`10x-tech-stack-selector`) powinien to dziedziczyć, nie wybierać od nowa.
