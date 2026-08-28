@@ -3,3 +3,10 @@
 .claude/skills/10x-*/
 .agents/skills/10x-*/
 skills-lock.json
+
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+.env*
+!.env.example
