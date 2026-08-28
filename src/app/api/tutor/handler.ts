@@ -158,6 +158,37 @@ export const createTutorHandler =
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();
 
+      if (body.action === "answer" && body.session.stage === "recall_formula") {
+        const equalsIndex = formulaAtom.text.indexOf("=");
+        const rightHandSide =
+          equalsIndex === -1 ? formulaAtom.text : formulaAtom.text.slice(equalsIndex + 1);
+        const fractionMatch = /\\(d?frac)/.exec(rightHandSide);
+        const fractionCommandEnd = fractionMatch
+          ? (fractionMatch.index ?? 0) + fractionMatch[0].length
+          : -1;
+        const nextOpeningBrace =
+          fractionCommandEnd === -1 ? -1 : rightHandSide.indexOf("{", fractionCommandEnd);
+
+        console.info("Tutor formula parser shape.", {
+          textLength: formulaAtom.text.length,
+          equalsIndex,
+          fractionCommand: fractionMatch?.[1] ?? "none",
+          fractionCommandIndex: fractionMatch?.index ?? -1,
+          charactersBeforeOpeningBrace:
+            nextOpeningBrace === -1 ? -1 : nextOpeningBrace - fractionCommandEnd,
+          nextCharacterIsOpeningBrace: rightHandSide[fractionCommandEnd] === "{",
+          nextNonWhitespaceIsOpeningBrace:
+            rightHandSide.slice(fractionCommandEnd).trimStart().startsWith("{") ?? false,
+          hasDisplaystyle: /\\displaystyle/.test(rightHandSide),
+          hasLeftOrRight: /\\(?:left|right)/.test(rightHandSide),
+          hasDoubleEscapedCommand: /\\\\[a-z]/i.test(rightHandSide),
+          leftBraceCount: (rightHandSide.match(/{/g) ?? []).length,
+          rightBraceCount: (rightHandSide.match(/}/g) ?? []).length,
+          leftParenthesisCount: (rightHandSide.match(/\(/g) ?? []).length,
+          rightParenthesisCount: (rightHandSide.match(/\)/g) ?? []).length
+        });
+      }
+
       const prefix = safety.mode === "supportive" ? safety.prefix : "";
       const reviewStatus = leastReviewedStatus(concept.reviewStatus, formulaAtom.reviewStatus);
 
