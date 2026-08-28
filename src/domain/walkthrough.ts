@@ -85,7 +85,11 @@ const linearizeLatexFractions = (value: string): string => {
 const normalizeExpression = (value: string, trustedFormula = false): string => {
   const equalsIndex = value.indexOf("=");
   const rightHandSide = equalsIndex === -1 ? value : value.slice(equalsIndex + 1);
-  const normalized = linearizeLatexFractions(rightHandSide)
+  const normalizedEscapes = rightHandSide.replace(
+    /\\\\(?=(?:d?frac|cdot|times|left|right|[,;]))/g,
+    "\\"
+  );
+  const normalized = linearizeLatexFractions(normalizedEscapes)
     .toLowerCase()
     .replaceAll("\\left", "")
     .replaceAll("\\right", "")
