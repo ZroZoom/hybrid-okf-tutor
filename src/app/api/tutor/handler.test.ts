@@ -203,7 +203,7 @@ describe("createTutorHandler", () => {
         {
           ...concept.atoms[0],
           id: "trapezoid-midline-formula",
-          title: "Linia środkowa",
+          title: "Pole trapezu",
           text: "m = (a + b) / 2"
         },
         {

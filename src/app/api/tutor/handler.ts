@@ -142,9 +142,10 @@ export const createTutorHandler =
       const concept = await deps.okfRepository.getConcept(conceptId, level);
       const formulaAtoms = concept?.atoms.filter((atom) => atom.type === "formula") ?? [];
       const formulaAtom =
+        formulaAtoms.find((atom) => isTrapezoidAreaFormula(atom.text)) ??
         formulaAtoms.find(
           (atom) => atom.title.trim().toLocaleLowerCase("pl-PL") === "pole trapezu"
-        ) ?? formulaAtoms.find((atom) => isTrapezoidAreaFormula(atom.text));
+        );
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();
 
