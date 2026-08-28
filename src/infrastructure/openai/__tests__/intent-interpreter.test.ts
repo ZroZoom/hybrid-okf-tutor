@@ -82,13 +82,19 @@ describe("OpenAiIntentInterpreter", () => {
     );
   });
 
-  it("fails closed when the response has no parsed intent", async () => {
+  it("classifies an invalid structured intent without exposing its content", async () => {
+    const invalidIntent: Record<string, unknown> = { ...validIntent };
+    delete invalidIntent.responseMode;
     const client = {
-      responses: { create: vi.fn().mockResolvedValue({ output_text: "" }) }
+      responses: { create: vi.fn().mockResolvedValue({ output_text: JSON.stringify(invalidIntent) }) }
     } as unknown as ConstructorParameters<typeof OpenAiIntentInterpreter>[0];
 
-    await expect(new OpenAiIntentInterpreter(client).interpret("Pomocy", "start")).rejects.toThrow(
-      "Intent interpretation failed."
-    );
+    await expect(
+      new OpenAiIntentInterpreter(client).interpret("Pomocy", "start")
+    ).rejects.toMatchObject({
+      message: "Intent interpretation failed.",
+      code: "INVALID_INTENT_RESPONSE",
+      type: "responseMode"
+    });
   });
 });

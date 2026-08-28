@@ -47,6 +47,14 @@ const studentIntentJsonSchema = {
   additionalProperties: false
 } as const;
 
+class IntentInterpretationError extends Error {
+  readonly code = "INVALID_INTENT_RESPONSE";
+
+  constructor(readonly type: string) {
+    super("Intent interpretation failed.");
+  }
+}
+
 export class OpenAiIntentInterpreter implements IntentInterpreter {
   constructor(private readonly client: OpenAiClient) {}
 
@@ -67,10 +75,19 @@ export class OpenAiIntentInterpreter implements IntentInterpreter {
       }
     });
 
+    let parsedJson: unknown;
     try {
-      return studentIntentSchema.parse(JSON.parse(response.output_text));
+      parsedJson = JSON.parse(response.output_text);
     } catch {
-      throw new Error("Intent interpretation failed.");
+      throw new IntentInterpretationError("json");
     }
+
+    const parsedIntent = studentIntentSchema.safeParse(parsedJson);
+    if (!parsedIntent.success) {
+      const issuePath = parsedIntent.error.issues[0]?.path.map(String).join(".") || "root";
+      throw new IntentInterpretationError(issuePath);
+    }
+
+    return parsedIntent.data;
   }
 }
