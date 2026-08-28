@@ -58,13 +58,19 @@ const linearizeLatexFractions = (value: string): string => {
   let index = 0;
 
   while (index < value.length) {
-    if (!value.startsWith("\\frac", index)) {
+    const command = value.startsWith("\\dfrac", index)
+      ? "\\dfrac"
+      : value.startsWith("\\frac", index)
+        ? "\\frac"
+        : null;
+
+    if (!command) {
       result += value[index];
       index += 1;
       continue;
     }
 
-    const numerator = readLatexGroup(value, index + "\\frac".length);
+    const numerator = readLatexGroup(value, index + command.length);
     const denominator = numerator ? readLatexGroup(value, numerator.nextIndex) : null;
 
     if (!numerator || !denominator) {
@@ -89,7 +95,10 @@ const normalizeExpression = (value: string, trustedFormula = false): string => {
     /\\\\(?=(?:d?frac|cdot|times|left|right|[,;]))/g,
     "\\"
   );
-  const normalized = linearizeLatexFractions(normalizedEscapes)
+  const expressionSource = trustedFormula
+    ? normalizedEscapes.replaceAll("\\displaystyle", "")
+    : normalizedEscapes;
+  const normalized = linearizeLatexFractions(expressionSource)
     .toLowerCase()
     .replaceAll("\\left", "")
     .replaceAll("\\right", "")
