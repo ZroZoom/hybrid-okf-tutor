@@ -78,7 +78,8 @@ const wireErrorResponseSchema = z.object({
 class OkfRepositoryRequestError extends Error {
   constructor(
     readonly status?: number,
-    readonly code?: string
+    readonly code?: string,
+    readonly type?: string
   ) {
     super("OKF repository request failed.");
   }
@@ -171,10 +172,20 @@ export class HttpOkfRepository implements OkfRepository {
         );
       }
 
-      return schema.parse(await response.json());
+      const parsedResponse = schema.safeParse(await response.json());
+      if (!parsedResponse.success) {
+        const issuePath = parsedResponse.error.issues[0]?.path.map(String).join(".") || "root";
+        throw new OkfRepositoryRequestError(
+          response.status,
+          "INVALID_RESPONSE_SHAPE",
+          issuePath
+        );
+      }
+
+      return parsedResponse.data;
     } catch (error) {
       if (error instanceof OkfRepositoryRequestError) throw error;
-      throw new OkfRepositoryRequestError();
+      throw new OkfRepositoryRequestError(undefined, "UPSTREAM_REQUEST_FAILED");
     }
   }
 }

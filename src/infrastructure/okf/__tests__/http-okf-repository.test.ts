@@ -165,9 +165,12 @@ describe("HttpOkfRepository", () => {
       jsonResponse({ results: [{ ...wireSearchResult, unexpected: true }] })
     );
 
-    await expect(repository.searchConcepts("trapez", "matematyka", "E8")).rejects.toThrow(
-      "OKF repository request failed."
-    );
+    await expect(repository.searchConcepts("trapez", "matematyka", "E8")).rejects.toMatchObject({
+      message: "OKF repository request failed.",
+      status: 200,
+      code: "INVALID_RESPONSE_SHAPE",
+      type: "results.0"
+    });
   });
 
   it("rejects a response that declares an operation outside the two-operation contract", async () => {
@@ -229,6 +232,15 @@ describe("HttpOkfRepository", () => {
       message: "OKF repository request failed.",
       status: 403,
       code: "UNAUTHORIZED_WRONG_ROLE"
+    });
+  });
+
+  it("classifies a failed upstream request without exposing the network error", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("network-secret-detail"));
+
+    await expect(repository.getConcept("trapez-id", "E8")).rejects.toMatchObject({
+      message: "OKF repository request failed.",
+      code: "UPSTREAM_REQUEST_FAILED"
     });
   });
 });
