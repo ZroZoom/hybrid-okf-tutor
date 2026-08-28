@@ -33,12 +33,12 @@ Zaakceptowany zakres z `shape-notes.md` (sesja `/10x-shape`, greenfield, MVP 3 t
 
 Faza 2 zakłada mechanizm "pytanie → ugruntowana odpowiedź", który Faza 1 właśnie buduje i waliduje jako `OkfRepository` + LLM Intent Interpreter + warstwa deterministyczna. FR-005 i FR-007 z shape-notes.md (feedback ugruntowany w wiedzy; dopytywanie w dowolnym momencie) to bezpośrednie zastosowanie tego samego silnika, który P0 dostarcza jako demo Q&A.
 
-## Otwarte punkty do uzgodnienia (nie rozstrzygnięte tutaj)
+## Punkty uzgodnienia — rozstrzygnięte 2026-08-28
 
-Poniższe wymagają jawnej decyzji zespołu — celowo nie zgadujemy odpowiedzi:
+Decyzje zespołu; `shape-notes.md` zaktualizowane zgodnie z nimi (sekcje Access Control, Success Criteria, Functional Requirements, Business Logic, Non-Functional Requirements, Forward: tech-stack).
 
-1. **Czy warstwa bezpieczeństwa/emocjonalna z P0 (ADR 0002, Task 3 planu) obowiązuje też w Fazie 2?** shape-notes.md jej nie wspomina — czy diagnoza/ćwiczenia dla dziecka z podstawówki dziedziczą tę samą politykę wykrywania kryzysu?
-2. **Czy pytania diagnostyczne (FR-002) pochodzą z tego samego OKF, czy to osobny zasób treści?** P0 opisuje `searchConcepts`/`getConcept` jako kontrakt Q&A, nie jako źródło zestawów diagnostycznych.
-3. **Czy Faza 2 startuje bez logowania (jak P0), czy logowanie wchodzi od razu?** ADR 0001/0004 zakładają brak kont w P0; shape-notes.md zakłada logowanie jako FR-001 od startu Fazy 2.
-4. **Czy zakres `subject` (dziś: `matematyka`, allowlist) i poziomy w OKF faktycznie pokrywają klasy 7-8 / egzamin ósmoklasisty** w stopniu wystarczającym dla diagnozy z FR-002/FR-003.
-5. **Stack jest już zablokowany przez ADR-y** (Next.js 16, Supabase, Vercel, `gpt-5.6-luna`) — downstream krok doboru stacku (`10x-tech-stack-selector`) dla Fazy 2 powinien to dziedziczyć, a nie wybierać od nowa.
+1. **Warstwa bezpieczeństwa/emocjonalna z P0 (ADR 0002, Task 3 planu) obowiązuje też w Fazie 2 — zawsze.** Diagnoza/ćwiczenia dziedziczą tę samą politykę wykrywania kryzysu; przy jawnym sygnale kryzysowym ma pierwszeństwo nad przepływem edukacyjnym. Odzwierciedlone w `shape-notes.md` jako nowy Guardrail i NFR.
+2. **Pytania diagnostyczne (FR-002) pochodzą z tego samego zasobu (OKF/repozytorium wiedzy)**, co reszta produktu — nie jest to osobny zasób treści. Odzwierciedlone w sekcji Business Logic.
+3. **Faza 2 startuje bez logowania**, dziedzicząc podejście P0. FR-001 (logowanie) usunięte z `shape-notes.md`; Access Control i US-01 zaktualizowane. Mechanizm ciągłości diagnozy/postępu bez konta pozostaje nie sprecyzowany — do ustalenia downstream. Rola rodzica pozostaje odłożona do v2 (bez logowania nie ma jeszcze do czego jej podłączyć).
+4. **Zakres `subject`/poziomy w OKF potwierdzony jako wystarczający** dla klas 7-8 / egzaminu ósmoklasisty.
+5. **Stack pozostaje ten, który już zablokowały ADR-y P0** (Next.js 16, React 19, TypeScript, pnpm, Vitest, Zod, Supabase Edge Functions/Deno, Vercel, `gpt-5.6-luna`). Downstream krok doboru stacku (`10x-tech-stack-selector`) dla Fazy 2 dziedziczy tę decyzję zamiast wybierać od nowa. Odzwierciedlone w `shape-notes.md` jako `## Forward: tech-stack`.
