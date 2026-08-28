@@ -141,7 +141,12 @@ const serverEnvSchema = z.object({
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export const getServerEnv = (source: NodeJS.ProcessEnv = process.env): ServerEnv =>
-  serverEnvSchema.parse(source);
+  serverEnvSchema.parse({
+    OPENAI_API_KEY: source.OPENAI_API_KEY,
+    SUPABASE_URL: source.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: source.SUPABASE_SERVICE_ROLE_KEY,
+    OKF_EDGE_FUNCTION_URL: source.OKF_EDGE_FUNCTION_URL
+  });
 ```
 
 `.env.example` contains the four empty variable names. Extend `.gitignore` with `node_modules/`, `.next/`, `coverage/`, `.env*`, and `!.env.example` without deleting the toolkit rules.
@@ -421,7 +426,7 @@ Assert that start performs `searchConcepts` then `getConcept`, answer performs o
 
 Order every request as: parse Zod body → Luna interpretation → deterministic safety → OKF lookup → walkthrough decision → minimal response. Reject unknown task IDs, stages, concept IDs longer than 100 characters, messages longer than 500 characters, and malformed bodies with 400. Map upstream failures to a generic 502 without raw error data.
 
-`route.ts` wires `OpenAiIntentInterpreter`, `HttpOkfRepository`, and `createTutorHandler`; all test injection remains in `handler.ts`.
+`route.ts` wires `OpenAiIntentInterpreter`, `HttpOkfRepository`, and `createTutorHandler`; all test injection remains in `handler.ts`. Construct environment-backed dependencies lazily inside `POST`, so `next build` and CI do not require runtime secrets.
 
 - [ ] **Step 6: Run focused and full tests, then commit**
 
