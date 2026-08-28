@@ -35,10 +35,12 @@ type ConversationMessage = {
   content: string;
 };
 
+const CALCULATION_SCAFFOLD = "___ cm²";
+
 const QUICK_ANSWERS: Partial<Record<TutorStage, string>> = {
   recall_formula: "P=(a+b)*h/2",
   substitute_values: "(6+10)*4/2",
-  calculate: "32 cm²"
+  calculate: CALCULATION_SCAFFOLD
 };
 
 const GENERIC_ERROR = "Nie udało się połączyć z tutorem. Spróbuj ponownie.";
@@ -150,7 +152,15 @@ export function TutorDemo() {
   const submitAnswer = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const answer = input.trim();
-    if (!session || !answer || session.stage === "complete" || !beginRequest()) return;
+    if (
+      !session ||
+      !answer ||
+      (session.stage === "calculate" && answer === CALCULATION_SCAFFOLD) ||
+      session.stage === "complete" ||
+      !beginRequest()
+    ) {
+      return;
+    }
 
     try {
       const response = await requestTutor({
@@ -261,7 +271,14 @@ export function TutorDemo() {
               <button
                 className="primary-button"
                 type="submit"
-                disabled={!session || !input.trim() || isLoading || walkthroughComplete}
+                disabled={
+                  !session ||
+                  !input.trim() ||
+                  (session.stage === "calculate" &&
+                    input.trim() === CALCULATION_SCAFFOLD) ||
+                  isLoading ||
+                  walkthroughComplete
+                }
               >
                 Wyślij odpowiedź
               </button>

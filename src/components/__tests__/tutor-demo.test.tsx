@@ -98,6 +98,7 @@ describe("TutorDemo", () => {
     expect(
       screen.getByText("Reguła deterministyczna: recall_formula")
     ).toBeInTheDocument();
+    expect(screen.queryByText(/32/)).not.toBeInTheDocument();
 
     const input = screen.getByRole("textbox", { name: "Twoja odpowiedź" });
     const submit = screen.getByRole("button", { name: "Wyślij odpowiedź" });
@@ -107,16 +108,22 @@ describe("TutorDemo", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     fireEvent.click(submit);
     expect(await screen.findByText("Jakie wartości podstawisz za a, b i h?")).toHaveFocus();
+    expect(screen.queryByText(/32/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "(6+10)*4/2" }));
     expect(input).toHaveValue("(6+10)*4/2");
     expect(fetchMock).toHaveBeenCalledTimes(2);
     fireEvent.click(submit);
     expect(await screen.findByText("Wykonaj teraz obliczenie.")).toHaveFocus();
+    expect(screen.queryByText(/32/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "32 cm²" }));
-    expect(input).toHaveValue("32 cm²");
+    fireEvent.click(screen.getByRole("button", { name: "___ cm²" }));
+    expect(input).toHaveValue("___ cm²");
+    expect(submit).toBeDisabled();
+    fireEvent.click(submit);
     expect(fetchMock).toHaveBeenCalledTimes(3);
+    fireEvent.change(input, { target: { value: "32 cm²" } });
+    expect(submit).toBeEnabled();
     fireEvent.click(submit);
     expect(
       await screen.findByText("Dobrze — samodzielnie rozwiązałeś zadanie.")
