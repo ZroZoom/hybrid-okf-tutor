@@ -74,7 +74,15 @@ describe("OpenAiIntentInterpreter", () => {
                 "emotionalSignal",
                 "responseMode"
               ],
-              additionalProperties: false
+              additionalProperties: false,
+              properties: expect.objectContaining({
+                concepts: {
+                  type: "array",
+                  items: { type: "string" },
+                  maxItems: 3
+                },
+                rewrittenQuery: { type: "string", maxLength: 200 }
+              })
             })
           })
         }

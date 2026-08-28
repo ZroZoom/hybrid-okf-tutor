@@ -18,14 +18,14 @@ const studentIntentJsonSchema = {
       type: "string",
       enum: ["definition", "formula", "example", "relation", "other"]
     },
-    concepts: { type: "array", items: { type: "string" } },
+    concepts: { type: "array", items: { type: "string" }, maxItems: 3 },
     requestedAnswerType: {
       type: ["string", "null"],
       enum: ["definition", "formula", "example", "explanation", null]
     },
     ambiguity: { type: "boolean" },
     missingEntity: { type: ["string", "null"] },
-    rewrittenQuery: { type: "string" },
+    rewrittenQuery: { type: "string", maxLength: 200 },
     emotionalSignal: {
       type: "string",
       enum: ["none", "frustration", "discouragement", "distress", "crisis"]
