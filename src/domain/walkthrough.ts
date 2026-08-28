@@ -93,27 +93,198 @@ const normalizeExpression = (value: string): string => {
     .replaceAll("\\times", "*")
     .replaceAll("×", "*")
     .replaceAll("·", "*")
+    .replaceAll("÷", "/")
+    .replaceAll("{", "(")
+    .replaceAll("}", ")")
+    .replaceAll("$", "")
     .replace(/\s+/g, "");
 
-  return removeRedundantDivisionGrouping(normalized);
+  return normalized;
 };
 
-const removeRedundantDivisionGrouping = (expression: string): string => {
-  if (!expression.startsWith("(")) return expression;
+type FormulaVariables = Record<"a" | "b" | "h", number>;
 
-  let depth = 0;
-  for (let index = 0; index < expression.length; index += 1) {
-    if (expression[index] === "(") depth += 1;
-    if (expression[index] === ")") depth -= 1;
+type ExpressionToken =
+  | { type: "number"; value: number }
+  | { type: "variable"; value: keyof FormulaVariables }
+  | { type: "operator"; value: "+" | "-" | "*" | "/" }
+  | { type: "left-parenthesis" }
+  | { type: "right-parenthesis" };
 
-    if (depth === 0) {
-      return expression[index + 1] === "/"
-        ? `${expression.slice(1, index)}${expression.slice(index + 1)}`
-        : expression;
+const tokenizeExpression = (value: string): ExpressionToken[] | null => {
+  const expression = normalizeExpression(value);
+  const tokens: ExpressionToken[] = [];
+
+  for (let index = 0; index < expression.length; ) {
+    const character = expression[index];
+
+    if (/[0-9.,]/.test(character)) {
+      let end = index + 1;
+      while (end < expression.length && /[0-9.,]/.test(expression[end])) end += 1;
+
+      const literal = expression.slice(index, end).replace(",", ".");
+      if ((literal.match(/\./g) ?? []).length > 1) return null;
+
+      const number = Number(literal);
+      if (!Number.isFinite(number)) return null;
+
+      tokens.push({ type: "number", value: number });
+      index = end;
+      continue;
     }
+
+    if (character === "a" || character === "b" || character === "h") {
+      tokens.push({ type: "variable", value: character });
+      index += 1;
+      continue;
+    }
+
+    if (character === "+" || character === "-" || character === "*" || character === "/") {
+      tokens.push({ type: "operator", value: character });
+      index += 1;
+      continue;
+    }
+
+    if (character === "(") {
+      tokens.push({ type: "left-parenthesis" });
+      index += 1;
+      continue;
+    }
+
+    if (character === ")") {
+      tokens.push({ type: "right-parenthesis" });
+      index += 1;
+      continue;
+    }
+
+    return null;
   }
 
-  return expression;
+  return tokens.length > 0 ? tokens : null;
+};
+
+const evaluateExpression = (value: string, variables: FormulaVariables): number | null => {
+  const tokens = tokenizeExpression(value);
+  if (!tokens) return null;
+
+  let index = 0;
+  const current = (): ExpressionToken | undefined => tokens[index];
+
+  const parsePrimary = (): number | null => {
+    const token = current();
+    if (!token) return null;
+
+    if (token.type === "number") {
+      index += 1;
+      return token.value;
+    }
+
+    if (token.type === "variable") {
+      index += 1;
+      return variables[token.value];
+    }
+
+    if (token.type !== "left-parenthesis") return null;
+
+    index += 1;
+    const result = parseSum();
+    if (result === null || current()?.type !== "right-parenthesis") return null;
+    index += 1;
+    return result;
+  };
+
+  const parseUnary = (): number | null => {
+    const token = current();
+    if (token?.type !== "operator" || (token.value !== "+" && token.value !== "-")) {
+      return parsePrimary();
+    }
+
+    index += 1;
+    const valueAfterSign = parseUnary();
+    if (valueAfterSign === null) return null;
+    return token.value === "-" ? -valueAfterSign : valueAfterSign;
+  };
+
+  const startsImplicitFactor = (token: ExpressionToken | undefined): boolean =>
+    token?.type === "number" ||
+    token?.type === "variable" ||
+    token?.type === "left-parenthesis";
+
+  const parseProduct = (): number | null => {
+    let result = parseUnary();
+    if (result === null) return null;
+
+    while (index < tokens.length) {
+      const token = current();
+      const hasExplicitOperator =
+        token?.type === "operator" && (token.value === "*" || token.value === "/");
+      if (!hasExplicitOperator && !startsImplicitFactor(token)) break;
+
+      const operator = hasExplicitOperator && token.type === "operator" ? token.value : "*";
+      if (hasExplicitOperator) index += 1;
+
+      const right = parseUnary();
+      if (right === null || (operator === "/" && right === 0)) return null;
+      result = operator === "*" ? result * right : result / right;
+    }
+
+    return Number.isFinite(result) ? result : null;
+  };
+
+  function parseSum(): number | null {
+    let result = parseProduct();
+    if (result === null) return null;
+
+    while (current()?.type === "operator") {
+      const token = current();
+      if (token?.type !== "operator" || (token.value !== "+" && token.value !== "-")) break;
+      index += 1;
+
+      const right = parseProduct();
+      if (right === null) return null;
+      result = token.value === "+" ? result + right : result - right;
+    }
+
+    return Number.isFinite(result) ? result : null;
+  }
+
+  const result = parseSum();
+  return result !== null && index === tokens.length ? result : null;
+};
+
+const approximatelyEqual = (left: number, right: number): boolean =>
+  Math.abs(left - right) <= Number.EPSILON * 100 * Math.max(1, Math.abs(left), Math.abs(right));
+
+const equivalentFormula = (answer: string, formula: string): boolean =>
+  [
+    { a: 2, b: 5, h: 3 },
+    { a: 4, b: 9, h: 2 },
+    { a: 7, b: 1, h: 5 }
+  ].every((variables) => {
+    const answerValue = evaluateExpression(answer, variables);
+    const formulaValue = evaluateExpression(formula, variables);
+    return answerValue !== null && formulaValue !== null && approximatelyEqual(answerValue, formulaValue);
+  });
+
+const equivalentSubstitution = (
+  answer: string,
+  formula: string,
+  task: WalkthroughTask
+): boolean => {
+  const tokens = tokenizeExpression(answer);
+  if (!tokens) return false;
+
+  const suppliedNumbers = tokens
+    .filter((token): token is Extract<ExpressionToken, { type: "number" }> => token.type === "number")
+    .map((token) => token.value);
+  const includesTaskValues = [task.a, task.b, task.h].every((expected) =>
+    suppliedNumbers.some((actual) => approximatelyEqual(actual, expected))
+  );
+  if (!includesTaskValues) return false;
+
+  const answerValue = evaluateExpression(answer, task);
+  const formulaValue = evaluateExpression(formula, task);
+  return answerValue !== null && formulaValue !== null && approximatelyEqual(answerValue, formulaValue);
 };
 
 const getFormulaRightHandSide = (input: WalkthroughInput): string | null => {
@@ -160,7 +331,10 @@ export const advanceWalkthrough = (input: WalkthroughInput): WalkthroughDecision
 
   switch (input.session.stage) {
     case "recall_formula": {
-      if (normalizeExpression(input.answer) === normalizeExpression(formula)) {
+      if (
+        normalizeExpression(input.answer) === normalizeExpression(formula) ||
+        equivalentFormula(input.answer, formula)
+      ) {
         return {
           nextStage: "substitute_values",
           correctness: "correct",
@@ -183,7 +357,10 @@ export const advanceWalkthrough = (input: WalkthroughInput): WalkthroughDecision
     }
 
     case "substitute_values": {
-      if (normalizeExpression(input.answer) === preparedSubstitution(formula, input.task)) {
+      if (
+        normalizeExpression(input.answer) === preparedSubstitution(formula, input.task) ||
+        equivalentSubstitution(input.answer, formula, input.task)
+      ) {
         return {
           nextStage: "calculate",
           correctness: "correct",

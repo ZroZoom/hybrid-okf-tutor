@@ -50,6 +50,36 @@ describe("advanceWalkthrough", () => {
     });
   });
 
+  it.each([
+    "P = \\frac{1}{2}(a + b) \\cdot h",
+    "P = (a + b) / 2 * h"
+  ])("accepts an equivalent OKF formula representation: %s", (formulaText) => {
+    const equivalentConcept = {
+      ...trapezoidConcept,
+      atoms: [{ ...trapezoidConcept.atoms[0], text: formulaText }]
+    };
+
+    expect(
+      advanceWalkthrough({
+        ...input("recall_formula", "P=(a+b)*h/2"),
+        concept: equivalentConcept
+      })
+    ).toMatchObject({ nextStage: "substitute_values", correctness: "correct" });
+    expect(
+      advanceWalkthrough({
+        ...input("substitute_values", "(6+10)*4/2"),
+        concept: equivalentConcept
+      })
+    ).toMatchObject({ nextStage: "calculate", correctness: "correct" });
+  });
+
+  it("does not let a final number skip the substitution step", () => {
+    expect(advanceWalkthrough(input("substitute_values", "32"))).toMatchObject({
+      nextStage: "substitute_values",
+      correctness: "incorrect"
+    });
+  });
+
   it("completes after the prepared result with an accepted unit", () => {
     expect(advanceWalkthrough(input("calculate", "32 cm²"))).toMatchObject({
       nextStage: "complete",
