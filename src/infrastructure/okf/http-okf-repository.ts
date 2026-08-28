@@ -71,6 +71,19 @@ const wireSkillSchema = z.object({
   reviewStatus: wireReviewStatusSchema
 });
 
+const wireErrorResponseSchema = z.object({
+  error: z.object({ code: z.string().max(100) })
+});
+
+class OkfRepositoryRequestError extends Error {
+  constructor(
+    readonly status?: number,
+    readonly code?: string
+  ) {
+    super("OKF repository request failed.");
+  }
+}
+
 const searchResponseSchema = z
   .object({ results: z.array(wireConceptSummarySchema) })
   .strict()
@@ -149,12 +162,19 @@ export class HttpOkfRepository implements OkfRepository {
       });
 
       if (!response.ok) {
-        throw new Error("Upstream response was not successful.");
+        const parsedError = wireErrorResponseSchema.safeParse(
+          await response.json().catch(() => null)
+        );
+        throw new OkfRepositoryRequestError(
+          response.status,
+          parsedError.success ? parsedError.data.error.code : undefined
+        );
       }
 
       return schema.parse(await response.json());
-    } catch {
-      throw new Error("OKF repository request failed.");
+    } catch (error) {
+      if (error instanceof OkfRepositoryRequestError) throw error;
+      throw new OkfRepositoryRequestError();
     }
   }
 }

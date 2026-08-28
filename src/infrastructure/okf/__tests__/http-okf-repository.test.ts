@@ -212,11 +212,23 @@ describe("HttpOkfRepository", () => {
     );
   });
 
-  it("fails closed for a non-success response without exposing its body", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ detail: "upstream-secret-detail" }, 403));
-
-    await expect(repository.getConcept("trapez-id", "E8")).rejects.toThrow(
-      "OKF repository request failed."
+  it("preserves only the safe status and error code from a non-success response", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          error: {
+            code: "UNAUTHORIZED_WRONG_ROLE",
+            message: "upstream-secret-detail"
+          }
+        },
+        403
+      )
     );
+
+    await expect(repository.getConcept("trapez-id", "E8")).rejects.toMatchObject({
+      message: "OKF repository request failed.",
+      status: 403,
+      code: "UNAUTHORIZED_WRONG_ROLE"
+    });
   });
 });
