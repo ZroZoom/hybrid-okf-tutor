@@ -58,9 +58,26 @@ const wireConcept = {
       reviewStatus: publishedReviewStatus
     }
   ],
-  relations: [],
-  curriculum: [],
-  skills: [],
+  relations: [
+    {
+      relationType: "depends_on",
+      sourceConceptId: "trapez-id",
+      targetConceptId: "pole-id",
+      reviewStatus: publishedReviewStatus
+    }
+  ],
+  curriculum: [
+    {
+      curriculumCode: "E8-MAT",
+      reviewStatus: publishedReviewStatus
+    }
+  ],
+  skills: [
+    {
+      skillCode: "calculate-area",
+      reviewStatus: publishedReviewStatus
+    }
+  ],
   reviewStatus: publishedReviewStatus
 };
 
@@ -76,9 +93,9 @@ const concept = {
       reviewStatus: "published"
     }
   ],
-  relations: [],
-  curriculum: [],
-  skills: []
+  relations: [{ reviewStatus: "published" }],
+  curriculum: [{ reviewStatus: "published" }],
+  skills: [{ reviewStatus: "published" }]
 };
 
 const jsonResponse = (body: unknown, status = 200): Response =>

@@ -15,7 +15,6 @@ export type OkfAtom = {
 };
 
 export type OkfLinkedEntity = {
-  id: string;
   reviewStatus: ReviewStatus;
 };
 

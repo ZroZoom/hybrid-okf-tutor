@@ -54,20 +54,7 @@ const wireAtomSchema = z
   })
   .strict();
 
-const wireRelationSchema = z
-  .object({
-    relationId: z.string(),
-    reviewStatus: wireReviewStatusSchema
-  });
-
-const wireCurriculumSchema = z
-  .object({
-    curriculumId: z.string(),
-    reviewStatus: wireReviewStatusSchema
-  });
-
-const wireSkillSchema = z.object({
-  skillId: z.string(),
+const wireLinkedEntitySchema = z.object({
   reviewStatus: wireReviewStatusSchema
 });
 
@@ -103,9 +90,9 @@ const conceptResponseSchema = z
       .object({
         concept: wireConceptSchema,
         atoms: z.array(wireAtomSchema),
-        relations: z.array(wireRelationSchema),
-        curriculum: z.array(wireCurriculumSchema),
-        skills: z.array(wireSkillSchema),
+        relations: z.array(wireLinkedEntitySchema),
+        curriculum: z.array(wireLinkedEntitySchema),
+        skills: z.array(wireLinkedEntitySchema),
         reviewStatus: wireReviewStatusSchema
       })
       .strict()
@@ -125,15 +112,12 @@ const conceptResponseSchema = z
             reviewStatus: atom.reviewStatus.status
           })),
           relations: result.relations.map((relation) => ({
-            id: relation.relationId,
             reviewStatus: relation.reviewStatus.status
           })),
           curriculum: result.curriculum.map((entry) => ({
-            id: entry.curriculumId,
             reviewStatus: entry.reviewStatus.status
           })),
           skills: result.skills.map((skill) => ({
-            id: skill.skillId,
             reviewStatus: skill.reviewStatus.status
           }))
         }
