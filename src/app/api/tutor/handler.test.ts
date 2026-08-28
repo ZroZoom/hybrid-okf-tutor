@@ -304,8 +304,15 @@ describe("createTutorHandler", () => {
     expect(getConcept).not.toHaveBeenCalled();
   });
 
-  it("maps Luna failures to a generic 502 without raw error data", async () => {
-    interpret.mockRejectedValueOnce(new Error("openai-secret-bearing-error"));
+  it("logs only safe metadata for Luna failures and returns a generic 502", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    interpret.mockRejectedValueOnce(
+      Object.assign(new Error("openai-secret-bearing-error"), {
+        status: 404,
+        code: "model_not_found",
+        type: "invalid_request_error"
+      })
+    );
 
     const response = await handler()(
       requestFor({ action: "start", message: "Chcę obliczyć pole trapezu" })
@@ -315,6 +322,14 @@ describe("createTutorHandler", () => {
     expect(response.status).toBe(502);
     expect(serialized).toBe('{"error":"Tutor service is temporarily unavailable."}');
     expect(serialized).not.toContain("openai-secret-bearing-error");
+    expect(errorLog).toHaveBeenCalledWith("Tutor dependency failed.", {
+      name: "Error",
+      status: 404,
+      code: "model_not_found",
+      type: "invalid_request_error"
+    });
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("openai-secret-bearing-error");
+    errorLog.mockRestore();
   });
 
   it("maps OKF failures to the same generic 502 without raw error data", async () => {

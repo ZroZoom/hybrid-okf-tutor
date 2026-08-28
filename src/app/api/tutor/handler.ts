@@ -58,6 +58,20 @@ const jsonResponse = (body: TutorResponse): Response => Response.json(body);
 
 const failedUpstreamResponse = (): Response => Response.json(UPSTREAM_FAILURE, { status: 502 });
 
+const logDependencyFailure = (error: unknown): void => {
+  const candidate =
+    typeof error === "object" && error !== null
+      ? (error as { status?: unknown; code?: unknown; type?: unknown })
+      : {};
+
+  console.error("Tutor dependency failed.", {
+    name: error instanceof Error ? error.name : "UnknownError",
+    status: typeof candidate.status === "number" ? candidate.status : undefined,
+    code: typeof candidate.code === "string" ? candidate.code : undefined,
+    type: typeof candidate.type === "string" ? candidate.type : undefined
+  });
+};
+
 const reviewStatusPriority: Record<ReviewStatus, number> = {
   draft: 0,
   unversioned: 0,
@@ -177,7 +191,8 @@ export const createTutorHandler =
           ruleName: body.session.stage
         }
       });
-    } catch {
+    } catch (error) {
+      logDependencyFailure(error);
       return failedUpstreamResponse();
     }
   };
