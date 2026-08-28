@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hybrid OKF Tutor",
-  description: "Guided trapezoid learning"
+  title: "Pole trapezu krok po kroku | Hybrid OKF Tutor",
+  description: "Jednoekranowe demo tutora prowadzącego przez obliczenie pola trapezu."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

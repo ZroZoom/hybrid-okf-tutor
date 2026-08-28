@@ -1,3 +1,5 @@
+import { TutorDemo } from "@/components/tutor-demo";
+
 export default function Home() {
-  return <main>Hybrid OKF Tutor</main>;
+  return <TutorDemo />;
 }
