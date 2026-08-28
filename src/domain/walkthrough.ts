@@ -92,7 +92,7 @@ const normalizeExpression = (value: string, trustedFormula = false): string => {
   const equalsIndex = value.indexOf("=");
   const rightHandSide = equalsIndex === -1 ? value : value.slice(equalsIndex + 1);
   const normalizedEscapes = rightHandSide.replace(
-    /\\\\(?=(?:d?frac|cdot|times|left|right|[,;]))/g,
+    /\\\\(?=(?:displaystyle|d?frac|cdot|times|left|right|[,;]))/g,
     "\\"
   );
   const expressionSource = trustedFormula
