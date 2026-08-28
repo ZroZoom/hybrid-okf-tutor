@@ -208,7 +208,7 @@ describe("createTutorHandler", () => {
         },
         {
           ...concept.atoms[0],
-          title: "Pole trapezu"
+          title: "Wzór na pole figury"
         }
       ]
     });

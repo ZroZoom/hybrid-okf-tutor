@@ -85,6 +85,9 @@ const leastReviewedStatus = (...statuses: ReviewStatus[]): ReviewStatus =>
     reviewStatusPriority[status] < reviewStatusPriority[leastReviewed] ? status : leastReviewed
   );
 
+const isTrapezoidAreaFormula = (text: string): boolean =>
+  [/\ba\b/i, /\bb\b/i, /\bh\b/i].every((variable) => variable.test(text));
+
 export const createTutorHandler =
   (deps: TutorDependencies) =>
   async (request: Request): Promise<Response> => {
@@ -137,11 +140,11 @@ export const createTutorHandler =
       if (!conceptId) return failedUpstreamResponse();
 
       const concept = await deps.okfRepository.getConcept(conceptId, level);
-      const formulaAtom = concept?.atoms.find(
-        (atom) =>
-          atom.type === "formula" &&
-          atom.title.trim().toLocaleLowerCase("pl-PL") === "pole trapezu"
-      );
+      const formulaAtoms = concept?.atoms.filter((atom) => atom.type === "formula") ?? [];
+      const formulaAtom =
+        formulaAtoms.find(
+          (atom) => atom.title.trim().toLocaleLowerCase("pl-PL") === "pole trapezu"
+        ) ?? formulaAtoms.find((atom) => isTrapezoidAreaFormula(atom.text));
 
       if (!concept || !formulaAtom) return failedUpstreamResponse();
 
