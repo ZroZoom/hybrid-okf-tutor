@@ -202,9 +202,9 @@ describe("createTutorHandler", () => {
       atoms: [
         {
           ...concept.atoms[0],
-          id: "trapezoid-midline-formula",
-          title: "Pole trapezu",
-          text: "m = (a + b) / 2"
+          id: "trapezoid-height-formula",
+          title: "Wysokość trapezu",
+          text: "h = 2 * P / (a + b)"
         },
         {
           ...concept.atoms[0],

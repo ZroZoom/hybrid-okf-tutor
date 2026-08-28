@@ -85,8 +85,17 @@ const leastReviewedStatus = (...statuses: ReviewStatus[]): ReviewStatus =>
     reviewStatusPriority[status] < reviewStatusPriority[leastReviewed] ? status : leastReviewed
   );
 
-const isTrapezoidAreaFormula = (text: string): boolean =>
-  [/\ba\b/i, /\bb\b/i, /\bh\b/i].every((variable) => variable.test(text));
+const isTrapezoidAreaFormula = (text: string): boolean => {
+  const equalsIndex = text.indexOf("=");
+  if (equalsIndex === -1) return false;
+
+  const leftHandSide = text.slice(0, equalsIndex).replace(/[^a-z]/gi, "").toLowerCase();
+  const rightHandSide = text.slice(equalsIndex + 1);
+  return (
+    leftHandSide === "p" &&
+    [/\ba\b/i, /\bb\b/i, /\bh\b/i].every((variable) => variable.test(rightHandSide))
+  );
+};
 
 export const createTutorHandler =
   (deps: TutorDependencies) =>
