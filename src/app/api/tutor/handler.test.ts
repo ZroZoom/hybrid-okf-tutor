@@ -19,7 +19,7 @@ const normalIntent: StudentIntent = {
 
 const concept = {
   id: "trapez-id",
-  name: "Pole trapezu",
+  name: "trapez",
   reviewStatus: "published" as const,
   atoms: [
     {
@@ -91,7 +91,7 @@ describe("createTutorHandler", () => {
     expect(response.status).toBe(200);
     expect(calls).toEqual(["searchConcepts", "getConcept"]);
     expect(interpret).toHaveBeenCalledWith("Chcę obliczyć pole trapezu", "start");
-    expect(searchConcepts).toHaveBeenCalledWith("pole trapezu", "matematyka", "E8");
+    expect(searchConcepts).toHaveBeenCalledWith("trapez", "matematyka", "E8");
     expect(getConcept).toHaveBeenCalledWith("trapez-id", "E8");
     expect(Object.keys(body).sort()).toEqual(["reply", "reviewStatus", "session", "trace"]);
     expect(body).toEqual({
@@ -100,10 +100,38 @@ describe("createTutorHandler", () => {
       reviewStatus: "published",
       trace: {
         intent: "formula",
-        conceptName: "Pole trapezu",
+        conceptName: "trapez",
         atomType: "formula",
         ruleName: "recall_formula"
       }
+    });
+  });
+
+  it("selects the exact trapezoid concept when OKF returns a looser result first", async () => {
+    searchConcepts.mockResolvedValueOnce([
+      {
+        id: "triangle-id",
+        name: "trójkąt",
+        subject: "matematyka",
+        reviewStatus: "draft"
+      },
+      {
+        id: "trapez-id",
+        name: "trapez",
+        subject: "matematyka",
+        reviewStatus: "draft"
+      }
+    ]);
+
+    const response = await handler()(
+      requestFor({ action: "start", message: "Chcę obliczyć pole trapezu" })
+    );
+
+    expect(response.status).toBe(200);
+    expect(getConcept).toHaveBeenCalledWith("trapez-id", "E8");
+    expect(await json(response)).toMatchObject({
+      reply: "Jaki jest wzór na pole trapezu?",
+      session: { conceptId: "trapez-id" }
     });
   });
 
@@ -115,7 +143,7 @@ describe("createTutorHandler", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(searchConcepts).toHaveBeenCalledWith("pole trapezu", "matematyka", "E8");
+    expect(searchConcepts).toHaveBeenCalledWith("trapez", "matematyka", "E8");
     expect(getConcept).toHaveBeenCalledWith("trapez-id", "E8");
   });
 
@@ -160,7 +188,7 @@ describe("createTutorHandler", () => {
       reviewStatus: "published",
       trace: {
         intent: "formula",
-        conceptName: "Pole trapezu",
+        conceptName: "trapez",
         atomType: "formula",
         ruleName: "recall_formula"
       }

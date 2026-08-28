@@ -126,11 +126,12 @@ export const createTutorHandler =
         body.action === "start"
           ? (
               await deps.okfRepository.searchConcepts(
-                intent.rewrittenQuery,
+                "trapez",
                 intent.subject ?? "matematyka",
                 level
               )
-            )[0]?.id
+            ).find((candidate) => candidate.name.trim().toLocaleLowerCase("pl-PL") === "trapez")
+              ?.id
           : body.session.conceptId;
 
       if (!conceptId) return failedUpstreamResponse();
@@ -156,7 +157,7 @@ export const createTutorHandler =
         const session: TutorSession = parsedSession.data;
 
         return jsonResponse({
-          reply: `${prefix}Jaki jest wzór na ${concept.name.toLowerCase()}?`,
+          reply: `${prefix}Jaki jest wzór na pole trapezu?`,
           session,
           reviewStatus,
           trace: {
